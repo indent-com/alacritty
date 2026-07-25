@@ -681,10 +681,13 @@ impl<T> Term<T> {
         debug!("New num_cols is {num_cols} and num_lines is {num_lines}");
 
         // Move vi mode cursor with the content.
-        let history_size = self.history_size();
+        //
+        // Growing pads with blank lines below the content instead of pulling
+        // lines out of scrollback, so content never moves down: positive deltas
+        // clamp to 0.
         let mut delta = num_lines as i32 - old_lines as i32;
         let min_delta = cmp::min(0, num_lines as i32 - self.grid.cursor.point.line.0 - 1);
-        delta = cmp::min(cmp::max(delta, min_delta), history_size as i32);
+        delta = cmp::min(cmp::max(delta, min_delta), 0);
         self.vi_mode_cursor.point.line += delta;
 
         let is_alt = self.mode.contains(TermMode::ALT_SCREEN);
@@ -2999,8 +3002,10 @@ mod tests {
         size.screen_lines = 30;
         term.resize(size);
 
-        assert_eq!(term.history_size(), 0);
-        assert_eq!(term.grid.cursor.point, Point::new(Line(19), Column(0)));
+        // Growing pads with blank lines instead of pulling scrollback, so
+        // history and content stay put.
+        assert_eq!(term.history_size(), 10);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
     }
 
     #[test]
@@ -3025,8 +3030,10 @@ mod tests {
         // Leave alt screen.
         term.unset_private_mode(NamedPrivateMode::SwapScreenAndSetRestoreCursor.into());
 
-        assert_eq!(term.history_size(), 0);
-        assert_eq!(term.grid.cursor.point, Point::new(Line(19), Column(0)));
+        // Growing pads with blank lines instead of pulling scrollback, so
+        // history and content stay put.
+        assert_eq!(term.history_size(), 10);
+        assert_eq!(term.grid.cursor.point, Point::new(Line(9), Column(0)));
     }
 
     #[test]

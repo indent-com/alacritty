@@ -37,9 +37,15 @@ impl<T: GridCell + Default + PartialEq> Grid<T> {
 
     /// Add lines to the visible area.
     ///
-    /// Alacritty keeps the cursor at the bottom of the terminal as long as there
-    /// is scrollback available. Once scrollback is exhausted, new lines are
-    /// simply added to the bottom of the screen.
+    /// blit: never pull scrollback into the viewport when growing — new lines
+    /// are always padded at the bottom.  Pane sizes change frequently (splits,
+    /// mediated multi-client sizes), and pulling history would resurrect
+    /// content the user cleared (CSI 2 J moves screen content into scrollback
+    /// rather than erasing it).
+    ///
+    /// (Upstream behavior: keep the cursor at the bottom of the terminal as
+    /// long as there is scrollback available.  Once scrollback is exhausted,
+    /// new lines are simply added to the bottom of the screen.)
     fn grow_lines<D>(&mut self, target: usize)
     where
         T: ResetDiscriminant<D>,
@@ -51,8 +57,8 @@ impl<T: GridCell + Default + PartialEq> Grid<T> {
         self.raw.grow_visible_lines(target);
         self.lines = target;
 
-        let history_size = self.history_size();
-        let from_history = min(history_size, lines_added);
+        // blit: no lines are ever pulled from history (see fn doc).
+        let from_history = 0;
 
         // Move existing lines up for every line that couldn't be pulled from history.
         if from_history != lines_added {

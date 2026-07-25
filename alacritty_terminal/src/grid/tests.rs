@@ -388,3 +388,33 @@ fn wrap_cell(c: char) -> Cell {
     cell.flags.insert(Flags::WRAPLINE);
     cell
 }
+
+// blit: growing the visible area must never pull scrollback lines into the
+// viewport (see `grow_lines` doc); new lines are padded blank at the bottom.
+#[test]
+fn grow_lines_pads_blank_without_pulling_history() {
+    let mut grid = Grid::<usize>::new(5, 1, 10);
+    for i in 0..5 {
+        grid[Line(i as i32)][Column(0)] = i + 1;
+    }
+    grid.cursor.point.line = Line(4);
+
+    // Push two lines into scrollback: visible becomes [3, 4, 5, _, _].
+    grid.scroll_up::<usize>(&(Line(0)..Line(5)), 2);
+    assert_eq!(grid.history_size(), 2);
+    assert_eq!(grid[Line(0)][Column(0)], 3);
+
+    // Grow 5 -> 10 lines.
+    grid.resize::<usize>(true, 10, 1);
+
+    // Scrollback is untouched; existing content stays in place; new lines
+    // are blank and appended at the bottom.
+    assert_eq!(grid.history_size(), 2);
+    assert_eq!(grid[Line(0)][Column(0)], 3);
+    assert_eq!(grid[Line(1)][Column(0)], 4);
+    assert_eq!(grid[Line(2)][Column(0)], 5);
+    for r in 3..10 {
+        assert_eq!(grid[Line(r)][Column(0)], 0, "row {r} should be blank");
+    }
+    assert_eq!(grid.cursor.point.line, Line(4));
+}
