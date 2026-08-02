@@ -1,14 +1,18 @@
 [package]
-name = "alacritty_terminal"
-version = "0.26.0"
+name = "blit-alacritty-terminal"
+version = "0.26.0-blit.1"
 authors = ["Christian Duerr <contact@christianduerr.com>", "Joe Wilm <joe@jwilm.com>"]
 license = "Apache-2.0"
-description = "Library for writing terminal emulators"
+description = "Alacritty terminal library with blit's emoji presentation width fixes"
 readme = "../README.md"
 homepage = "https://alacritty.org"
-repository = "https://github.com/alacritty/alacritty"
+repository = "https://github.com/indent-com/alacritty"
 edition.workspace = true
 rust-version.workspace = true
+publish = ["crates-io"]
+
+[lib]
+name = "alacritty_terminal"
 
 [features]
 default = ["serde"]

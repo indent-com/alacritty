@@ -37,8 +37,8 @@ dependencies = [
  "ahash",
  "alacritty_config",
  "alacritty_config_derive",
- "alacritty_terminal",
  "bitflags 2.9.4",
+ "blit-alacritty-terminal",
  "clap",
  "clap_complete",
  "copypasta",
@@ -91,30 +91,6 @@ dependencies = [
  "serde",
  "syn",
  "toml",
-]
-
-[[package]]
-name = "alacritty_terminal"
-version = "0.26.0"
-dependencies = [
- "base64",
- "bitflags 2.9.4",
- "home",
- "libc",
- "log",
- "miow",
- "parking_lot",
- "piper",
- "polling",
- "regex-automata",
- "rustix 1.1.2",
- "rustix-openpty",
- "serde",
- "serde_json",
- "signal-hook",
- "unicode-width",
- "vte",
- "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -237,6 +213,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2261d10cca569e4643e526d8dc2e62e433cc8aba21ab764233731f8d369bf394"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "blit-alacritty-terminal"
+version = "0.26.0-blit.1"
+dependencies = [
+ "base64",
+ "bitflags 2.9.4",
+ "home",
+ "libc",
+ "log",
+ "miow",
+ "parking_lot",
+ "piper",
+ "polling",
+ "regex-automata",
+ "rustix 1.1.2",
+ "rustix-openpty",
+ "serde",
+ "serde_json",
+ "signal-hook",
+ "unicode-width",
+ "vte",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

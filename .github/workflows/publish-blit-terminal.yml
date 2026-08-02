@@ -1,0 +1,62 @@
+name: Publish blit-alacritty-terminal
+
+on:
+  push:
+    tags: ["blit-alacritty-terminal-v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag version
+        run: |
+          tag_version="${GITHUB_REF_NAME#blit-alacritty-terminal-v}"
+          crate_version=$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name == "blit-alacritty-terminal") | .version')
+          if [ "$tag_version" != "$crate_version" ]; then
+            echo "::error::tag version $tag_version does not match crate version $crate_version"
+            exit 1
+          fi
+
+      - name: Authenticate to crates.io
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          token="$CRATES_IO_TOKEN"
+          if [ -z "$token" ]; then
+            oidc_response=$(curl -sS \
+              -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=crates.io")
+            oidc=$(jq -r '.value // empty' <<<"$oidc_response")
+            if [ -z "$oidc" ]; then
+              echo "::error::failed to get OIDC token from GitHub"
+              exit 1
+            fi
+
+            token_response=$(curl -sS -X POST \
+              https://crates.io/api/v1/trusted_publishing/tokens \
+              -A 'blit-alacritty-terminal-release/1 (https://github.com/indent-com/alacritty)' \
+              -H "Content-Type: application/json" \
+              -d "{\"jwt\": \"$oidc\"}")
+            token=$(jq -r '.token // empty' <<<"$token_response")
+            if [ -z "$token" ]; then
+              echo "::error::failed to exchange OIDC token for crates.io publish token"
+              echo "$token_response"
+              exit 1
+            fi
+          fi
+
+          echo "::add-mask::$token"
+          echo "CARGO_REGISTRY_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Publish crate
+        run: cargo publish -p blit-alacritty-terminal
